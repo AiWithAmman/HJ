@@ -37,20 +37,14 @@
     function run(res) {
       c.width = window.innerWidth;
       c.height = window.innerHeight;
-      // Background image
       ctx.drawImage(res.image, 0, 0, c.width, c.height);
-      if (enableFade) {
-        ctx.fillStyle = 'rgba(10, 6, 2, 0.25)';
-      } else {
-        ctx.fillStyle = 'rgba(10, 6, 2, 0.85)';
-      }
+      ctx.fillStyle = 'rgba(10, 6, 2, 0.85)';
       ctx.fillRect(0, 0, c.width, c.height);
 
-      // brush settings
-      ctx.shadowColor = brushColor;
-      ctx.shadowBlur = 8;
-      ctx.strokeStyle = brushColor;
-      ctx.lineWidth = brushSize;
+      ctx.shadowColor = '#F5D061';
+      ctx.shadowBlur = 15;
+      ctx.strokeStyle = '#F5D061';
+      ctx.lineWidth = 6;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
@@ -81,38 +75,27 @@
         }
 
         ctx.beginPath();
-        ctx.arc(sx, sy, Math.max(3, brushSize/2), 0, 2 * Math.PI);
-        if (isDrawingActive()) { 
+        ctx.arc(sx, sy, 6, 0, 2 * Math.PI);
+        if (shift) { 
           ctx.fillStyle = '#FFFFFF'; 
         } else { 
           ctx.fillStyle = 'rgba(245, 208, 97, 0.4)'; 
         }
         ctx.fill();
 
-        if (isDrawingActive()) {
+        if (shift) {
           if (!draw) {
             draw = true;
             cur = [];
             arr.push(cur);
-            // push history snapshot
-            pushHistory();
           }
-          cur.push({x: sx, y: sy, color: brushColor, size: brushSize});
-          if (enableParticles) spawnParticle(sx, sy, brushColor);
+          cur.push({x: sx, y: sy});
         } else {
           draw = false;
         }
       } else {
         draw = false;
         sx = null;
-      }
-
-      // update and draw particles
-      for (var p = particles.length - 1; p >= 0; p--) {
-        var P = particles[p];
-        P.x += P.vx; P.y += P.vy; P.life -= 1; P.alpha *= 0.98;
-        ctx.beginPath(); ctx.globalAlpha = Math.max(0, P.alpha); ctx.fillStyle = P.color; ctx.arc(P.x, P.y, P.r, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
-        if (P.life <= 0) particles.splice(p,1);
       }
     }
 
@@ -138,68 +121,6 @@
     });
     
     cam.start();
-
-    // enhancements
-    var brushColor = '#F5D061';
-    var brushSize = 6;
-    var enableParticles = false;
-    var enableFade = false;
-    var history = [];
-    var redoStack = [];
-    var maxHistory = 50;
-    var particles = [];
-    var mirrorEnabled = true;
-
-    function spawnParticle(x,y,color){
-      particles.push({x:x,y:y,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,r:Math.random()*4+1,life:18,alpha:0.9,color:color});
-      if (particles.length>300) particles.splice(0, particles.length-250);
-    }
-
-    function pushHistory(){
-      try{
-        history.push(JSON.stringify(arr));
-        if (history.length>maxHistory) history.shift();
-        redoStack = [];
-      }catch(e){ }
-    }
-
-    function undo(){
-      if (history.length>0){
-        redoStack.push(JSON.stringify(arr));
-        history.pop();
-        var last = history[history.length-1] || '[]';
-        arr = JSON.parse(last);
-      }
-    }
-
-    function redo(){
-      if (redoStack.length>0){
-        var r = redoStack.pop();
-        history.push(JSON.stringify(arr));
-        arr = JSON.parse(r);
-      }
-    }
-
-    function clearAll(){ arr = []; pushHistory(); }
-
-    function saveImage(){
-      var url = c.toDataURL('image/png');
-      var a = document.createElement('a'); a.href = url; a.download = 'ramadan-drawing.png'; document.body.appendChild(a); a.click(); a.remove();
-    }
-
-    // Hook up controls
-    document.getElementById('color').addEventListener('input', function(e){ brushColor = e.target.value; });
-    document.getElementById('size').addEventListener('input', function(e){ brushSize = Number(e.target.value); });
-    document.getElementById('particles').addEventListener('change', function(e){ enableParticles = e.target.checked; });
-    document.getElementById('fade').addEventListener('change', function(e){ enableFade = e.target.checked; });
-    document.getElementById('undo').addEventListener('click', function(){ undo(); });
-    document.getElementById('redo').addEventListener('click', function(){ redo(); });
-    document.getElementById('clear').addEventListener('click', function(){ clearAll(); });
-    document.getElementById('save').addEventListener('click', function(){ saveImage(); });
-    document.getElementById('mirror').addEventListener('change', function(e){ mirrorEnabled = e.target.checked; if (mirrorEnabled) c.style.transform = 'scaleX(-1)'; else c.style.transform = 'scaleX(1)'; });
-
-    // initialize history with empty canvas
-    pushHistory();
   </script>
 </body>
 </html>
